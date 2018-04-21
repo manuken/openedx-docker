@@ -11,4 +11,4 @@ deploy:
   provider: script
   script: make push
   on:
-    branch: master
+    branch: release/hawthorn
