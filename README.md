@@ -118,8 +118,11 @@ Open a python shell in the lms or the cms:
     make lms-shell
     make cms-shell
 
+## Options
 
-## Android app (beta)
+### HTTPS
+
+### Android app (beta)
 
 The Android app for your platform can be easily built in just one command:
 

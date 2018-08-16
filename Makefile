@@ -11,14 +11,21 @@ endif
 DOCKER_COMPOSE_RUN_LMS = $(DOCKER_COMPOSE_RUN_OPENEDX) -p 8000:8000 lms
 DOCKER_COMPOSE_RUN_CMS = $(DOCKER_COMPOSE_RUN_OPENEDX) -p 8001:8001 cms
 
-all: configure update migrate assets daemon
+post_configure_targets = 
+ifeq ($(ACTIVATE_HTTPS), 1)
+	post_configure_targets += https-certificate
+endif
+
+all: configure $(post_configure_targets) update migrate assets daemon
 	@echo "All set \o/ You can access the LMS at http://localhost and the CMS at http://studio.localhost"
 
 ##################### Bootstrapping
 
 configure:
 	docker build -t regis/openedx-configurator:latest configurator/
-	docker run --rm -it --volume="$(PWD)/config:/openedx/config" -e USERID=$(USERID) -e SILENT=$(SILENT) regis/openedx-configurator
+	docker run --rm -it --volume="$(PWD)/config:/openedx/config" \
+		-e USERID=$(USERID) -e SILENT=$(SILENT) -e ACTIVATE_HTTPS=$(ACTIVATE_HTTPS) \
+		regis/openedx-configurator
 
 update:
 	docker-compose pull
@@ -73,6 +80,12 @@ import-demo-course:
 create-staff-user:
 	$(DOCKER_COMPOSE_RUN_OPENEDX) lms /bin/bash -c "./manage.py lms manage_user --superuser --staff ${USERNAME} ${EMAIL} && ./manage.py lms changepassword ${USERNAME}"
 
+https-certificate:
+	docker run --rm -it \
+		--volume="$(PWD)/config/letsencrypt/:/openedx/letsencrypt/config/" \
+		--volume="$(PWD)/data/letsencrypt/:/etc/letsencrypt/" \
+		--entrypoint "/openedx/letsencrypt/config/certonly.sh" \
+		certbot/certbot 
 
 ##################### Development
 
